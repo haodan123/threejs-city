@@ -1,0 +1,71 @@
+@use './base.css';
+@use './anim.scss';
+
+img {
+  pointer-events: none;
+  user-select: none;
+}
+
+.page_bg {
+  width: 100vw;
+  height: 100vh;
+
+  background: url('@/assets/global/body_bg.png') center center no-repeat;
+  background-size: 100% 100%;
+  position: relative;
+}
+
+.body_bg {
+  width: 100vw;
+  height: 100vh;
+  // position: relative;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.main_body {
+  width: 100%;
+  // height: calc(100% - var(--header-height));
+  height: calc(100% - var(--header-height));
+  position: relative;
+  display: flex;
+  padding: 1%;
+  gap: 10px;
+
+}
+
+
+//一般的地图容器
+.map_main_view {
+  z-index: 2;
+  width: 100vw;
+  height: 100vh;
+  position: absolute; 
+  inset: 0;
+}
+
+
+// 第一个页面的每一项css start
+.sc1_container_item {
+  z-index: 3;
+  width: 25%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: .9375rem;
+  position: relative;
+  transition: all 1s;
+  // overflow: hidden;
+}
+
+.sc1_view_item {
+  height: 33%;
+  width: 100%;
+  background-size: 100% 100%;
+  // padding: .625rem;
+  position: relative;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+// 第一个页面的每一项css end

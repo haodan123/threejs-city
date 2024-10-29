@@ -1,0 +1,97 @@
+// 动画start
+
+.anim_in_left1 {
+  transition: all 1s;
+  position: relative;
+  animation: moveLeft 1s;
+  animation-duration: 1.5s;
+  animation-timing-function: ease-in-out;
+}
+
+.anim_in_left2 {
+  transition: all 1s;
+  position: relative;
+  animation: moveLeft 1s;
+  animation-duration: 2s;
+  animation-timing-function: ease-in-out;
+}
+
+.anim_in_left3 {
+  transition: all 1s;
+  position: relative;
+  animation: moveLeft 1s;
+  animation-duration: 2.5s;
+  animation-timing-function: ease-in-out;
+}
+
+
+@keyframes moveLeft {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
+}
+
+
+.anim_in_right1 {
+  transition: all 1s;
+  position: relative;
+  animation: moveRight 1s;
+  animation-duration: 1.5s;
+}
+
+.anim_in_right2 {
+  transition: all 1s;
+  position: relative;
+  animation: moveRight 1s;
+  animation-duration: 2s;
+}
+
+.anim_in_right3 {
+  transition: all 1s;
+  position: relative;
+  animation: moveRight 1s;
+  animation-duration: 2.5s;
+}
+
+
+@keyframes moveRight {
+  0% {
+    transform: translateX(100%);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.anim_in_top1 {
+  transition: all 1s;
+  position: relative;
+  animation: moveTop 1s;
+  animation-duration: 1.5s;
+}
+
+.anim_in_top2 {
+  transition: all 1s;
+  position: relative;
+  animation: moveTop 1s;
+  animation-duration: 2s;
+}
+
+
+@keyframes moveTop {
+  0% {
+    transform: translateY(100%);
+  }
+
+  100% {
+    transform: translateY(0);
+  }
+}
+
+
+//动画end
