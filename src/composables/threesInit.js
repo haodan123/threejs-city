@@ -1,4 +1,5 @@
 import { onMounted, onUnmounted } from 'vue'
+import * as THREE from 'three'
 import Stats from 'three/examples/jsm/libs/stats.module.js' //  单独引入 stats 组件 性能监视器
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js' //轨道控制器
 import { CSS3DRenderer } from 'three/addons/renderers/CSS3DRenderer.js';
@@ -10,7 +11,6 @@ import { City } from '@/model/City.js' //城市类
 import { Ship } from '@/model/Ship.js'//游艇类
 import { Sky } from '@/environment/Sky';//天空类
 import { ClickHandler } from '@/utils/ClickHandler.js'
-import * as THREE from 'three'
 //动效管理类
 import { EffectManager } from '@/utils/EffectManager';
 /**
@@ -34,20 +34,6 @@ export const useThreeInit = (domId) => {
     width: 0,//宽度
     height: 0,//高度
   }
-  //渲染到哪个dom
-  // let dom
-  // // 创建 场景 摄像机 渲染器
-  // let scene, camera, renderer
-  // // 轨道控制器
-  // let controls
-  // // 性能监视器
-  // let stats
-  // // 把css渲染到threejs中
-  // let css3dRenderer
-  // // 渲染2d属性
-  // let css2dRenderer
-  // let width, height
-
 
   // 初始化场景摄像机渲染器
   const init = () => {
