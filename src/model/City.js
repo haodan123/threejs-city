@@ -10,15 +10,25 @@ import { FireBall } from '@/effect/FireBall';//火灾范围影像
 import { BuildInfo } from '@/dom/BuildInfo';//建筑信息 弹窗
 // 获取模型的中心和大小
 import { getBoxCenter } from '@/utils/getBoxCenter';
-
+// 动效管理类
+import { EffectManager } from '@/utils/EffectManager';
+import { ClickHandler } from '@/utils/ClickHandler';
 // 城市类
 export class City extends BaseModel {
   init() {
     //scene 和model都在baseModel类中设置了 直接调用就行
     this.scene.add(this.model)
 
+    this.buildNameObj = { // 模型名字和建筑显示名字对应关系
+      '01-shanghaizhongxindasha': '上海中心大厦',
+      "02-huanqiujinrongzhongxin": "环球金融中心",
+      "03-jinmaodasha": "金茂大厦",
+      "04-dongfangmingzhu": "东方明珠",
+    }
+
     this.initEffect()
     this.initFire('01-shanghaizhongxindasha')
+    this.bindClick()
   }
 
   // 初始化城市效果
@@ -46,7 +56,11 @@ export class City extends BaseModel {
         // 隐藏一开始的河流
         model.visible = false
         // 添加 处理之后的水的材质
-        new CityWater(model, this.scene)
+        const theWater = new CityWater(model, this.scene)
+        // 把水添加到动效管理类里面 做动效
+        // console.log(EffectManager.getInstance());
+        EffectManager.getInstance().addObj(theWater)
+
       }
 
       // Shanghai-08-River  //河流的name
@@ -83,22 +97,36 @@ export class City extends BaseModel {
     const { center, size } = getBoxCenter(build)
     new Fire(this.scene, center, size) //火灾标记
 
-    new FireBall(this.scene, center) //火灾范围影像
+    const fireBall = new FireBall(this.scene, center) //火灾范围影像
+    // 添加到动效管理类
+    EffectManager.getInstance().addObj(fireBall)
 
-    // 测试建筑信息
-    let dataObj = {
-      "squareMeters": "200",
-      // "name": this.buildNameObj[buildName],
-      "name": 200,
-      "officesRemain": "200",
-      "accommodate": "500",
-      "parkingRemain": "88",
-      "cameraPosition": {
-        "x": "-27.60404773326758",
-        "y": "77.6723594934777",
-        "z": "190.86129619259177"
-      }
-    }
-    new BuildInfo(this.scene, center, dataObj)
+
+
+  }
+
+  // 给中心四个建筑绑定点击事件 
+  bindClick() {
+    Object.keys(this.buildNameObj).forEach(key => {
+      const build = this.model.getObjectByName(key)
+      ClickHandler.getInstance().addMesh(build, (object) => {
+        // console.log(object);
+        const { center } = getBoxCenter(object) //获取建筑的中心
+        // 测试建筑信息
+        let dataObj = {
+          "squareMeters": "200",
+          "name": this.buildNameObj[key],
+          "officesRemain": "200",
+          "accommodate": "500",
+          "parkingRemain": "88",
+          "cameraPosition": {
+            "x": "-27.60404773326758",
+            "y": "77.6723594934777",
+            "z": "190.86129619259177"
+          }
+        }
+        new BuildInfo(this.scene, center, dataObj)
+      })
+    })
   }
 }

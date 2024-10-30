@@ -31,5 +31,12 @@ export class CityWater {
     // 添加到场景中
     this.scene.add(this.model)
   }
+
+  // 给水波纹做动画效果
+  onTick(t) {
+    // t的值:渲染循环启动过了多少毫秒的时间
+    // time 全局参数是 Water 内置好的，我们只需要不断传入新的偏移单位数值即可实现水波纹动态效果
+    this.model.material.uniforms['time'].value = t / 1000
+  }
 }
 

@@ -1,8 +1,9 @@
-import { ref, onMounted, watch, nextTick } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 import Stats from 'three/examples/jsm/libs/stats.module.js' //  单独引入 stats 组件 性能监视器
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js' //轨道控制器
 import { CSS3DRenderer } from 'three/addons/renderers/CSS3DRenderer.js';
 import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
+// import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js' //辅助工具
 
 import { loadManager } from '@/model/loadManager'
 import { City } from '@/model/City.js' //城市类
@@ -10,72 +11,81 @@ import { Ship } from '@/model/Ship.js'//游艇类
 import { Sky } from '@/environment/Sky';//天空类
 import { ClickHandler } from '@/utils/ClickHandler.js'
 import * as THREE from 'three'
-
+//动效管理类
+import { EffectManager } from '@/utils/EffectManager';
 /**
  *初始化threejs
  * @param {*} dom 渲染到哪个dom下
  * @param {*} domId 渲染到哪个dom的id下
  * @returns  把场景摄像机 渲染器等必要的东西返回出去
  */
+
 export const useThreeInit = (domId) => {
+  // 统一状态管理
+  const state = {
+    dom: null,//渲染到哪个dom
+    scene: null,//场景
+    camera: null,//摄像机
+    renderer: null,//渲染器
+    controls: null,//轨道控制器
+    stats: null,//性能监视器
+    css3dRenderer: null,//3d渲染器
+    css2dRenderer: null,//2d渲染器
+    width: 0,//宽度
+    height: 0,//高度
+  }
   //渲染到哪个dom
-  let dom
-  // 创建 场景 摄像机 渲染器
-  let scene, camera, renderer
-  // 轨道控制器
-  let controls
-  // 性能监视器
-  let stats
-  // 把css渲染到threejs中
-  let css3dRenderer
-  // 渲染2d属性
-  let css2dRenderer
-  // console.log('dom', dom, scene, camera, renderer, controls, css3dRenderer);
-  let width, height
+  // let dom
+  // // 创建 场景 摄像机 渲染器
+  // let scene, camera, renderer
+  // // 轨道控制器
+  // let controls
+  // // 性能监视器
+  // let stats
+  // // 把css渲染到threejs中
+  // let css3dRenderer
+  // // 渲染2d属性
+  // let css2dRenderer
+  // let width, height
 
 
   // 初始化场景摄像机渲染器
   const init = () => {
-    dom = document.getElementById(domId) || document.body
-    // console.log(dom, domId);
-    // console.log(dom);
-    if (dom) {
-      width = dom.clientWidth
-      height = dom.clientHeight
-    } else {
-      width = window.innerWidth
-      height = window.innerHeight
+    try {
+      state.dom = document.getElementById(domId) || document.body
+      state.width = state.dom?.clientWidth || window.innerWidth
+      state.height = state.dom?.clientHeight || window.innerHeight
+
+      state.scene = new THREE.Scene() //场景
+      state.renderer = new THREE.WebGLRenderer({ //渲染器
+        antialias: true, //抗锯齿
+        powerPreference: "high-performance" // 性能优化
+      })
+
+      state.renderer.setSize(state.width, state.height)
+      state.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)) // 优化高DPI设备  对mac高分辨率屏幕优化非常明显
+      state.renderer.shadowMap.enabled = true //开启阴影渲染支持
+
+      state.renderer.shadowMap.type = THREE.PCFSoftShadowMap // 更好的阴影效果
+
+      // 添加到dom上
+      state.dom.appendChild(state.renderer.domElement)
+    } catch (error) {
+      console.error('Scene initialization failed:', error)
     }
-
-
-    scene = new THREE.Scene()
-    renderer = new THREE.WebGLRenderer({ antialias: true }) //设置antialias为true就没有锯齿了
-    renderer.setSize(width, height)
-
-    renderer.shadowMap.enabled = true // 开启阴影渲染支持
-
-    // testBox.value.appendChild(renderer.domElement)
-    // 渲染到body上
-    if (dom) {
-      dom.appendChild(renderer.domElement)
-    } else {
-      document.body.appendChild(renderer.domElement)
-    }
-
 
   }
   // 创建摄像机
   const createCamera = () => {
-    // camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000)
-    camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 10000) //模型比较大 设置为1万
+    state.camera = new THREE.PerspectiveCamera(75, state.width / state.height, 0.1, 10000) //模型比较大 设置为1万
     // camera.position.z = 0.1 //z轴正0.1 做全景效果
     // camera.position.z = 5 //z轴正5 做正常效果
-    camera.position.set(-148, 55, -101) //摄像头位置 模型比较大 摄像机调远一点
+    state.camera.position.set(-148, 55, -101) //摄像头位置 模型比较大 摄像机调远一点
   }
   // 轨道控制器
   const createControls = () => {
-    controls = new OrbitControls(camera, renderer.domElement)
-    controls.update()
+    state.controls = new OrbitControls(state.camera, state.renderer.domElement)
+    state.controls.update()
 
     // 摄像机移动范围控制
     // controls.maxDistance = 10 //最多放大到10个单位
@@ -84,9 +94,8 @@ export const useThreeInit = (domId) => {
 
   // 创建模型
   const createModel = () => {
-
     // 创建天空
-    const skybg = new Sky(scene)
+    const skybg = new Sky(state.scene)
     // 图片 右左上下前后
     skybg.setBack('textures/sky/', [
       'px.jpg',
@@ -95,7 +104,6 @@ export const useThreeInit = (domId) => {
       'ny.jpg',
       'pz.jpg',
       'nz.jpg',
-
     ])
 
     // 加载城市和游轮的模型
@@ -104,14 +112,19 @@ export const useThreeInit = (domId) => {
       modelList.forEach(item => {
         if (item.url === 'fbx/city.fbx') {
           // 如果是城市的fbx模型
-          new City(item.model, scene, camera, controls)
+          new City(item.model, state.scene, state.camera, state.controls)
         } else if (item.url === 'gltf/ship.glb') {
           // 游艇的glb模型
-          const ship = new Ship(item.model, scene, camera, controls)
+          const ship = new Ship(item.model, state.scene, state.camera, state.controls)
           // console.log(ship);
           ship.model.position.set(150, 0, -80)//放到合适的位置
           ship.model.rotation.set(0, -Math.PI / 2, 0) //y轴旋转掉头
           ship.model.scale.set(100, 100, 100) //模型本身太小了 放大100倍
+
+          // ship.generatorMovePath()
+          // 把游艇添加到动效管理类里面 做动效
+          EffectManager.getInstance().addObj(ship)
+
         }
       })
     })
@@ -120,7 +133,7 @@ export const useThreeInit = (domId) => {
   const createClick3D = () => {
     // // three.js 光线投射统一管理类初始化  threejs的点击事件
     // ClickHandler.getInstance().init(camera, cityRef.value)
-    ClickHandler.getInstance().init(camera, dom)
+    ClickHandler.getInstance().init(state.camera, state.dom)
   }
 
   // 坐标轴
@@ -128,85 +141,106 @@ export const useThreeInit = (domId) => {
     // const axesHelper = new THREE.AxesHelper(5)
     const axesHelper = new THREE.AxesHelper(1500)
     // console.log(axesHelper)
-    scene.add(axesHelper)
+    state.scene.add(axesHelper)
   }
   // 创建性能监视器
   const createStats = () => {
     // 记得在循环渲染中调用 stats.update()
-    stats = new Stats()
-    stats.setMode(0) //0先显示fps 1先显示ms 2先显示mb
-    stats.domElement.style.position = 'absolute'
-    stats.domElement.style.left = '0'
-    stats.domElement.style.top = '0'
+    state.stats = new Stats()
+    state.stats.setMode(0) //0先显示fps 1先显示ms 2先显示mb
+    state.stats.domElement.style.position = 'absolute'
+    state.stats.domElement.style.left = '0'
+    state.stats.domElement.style.top = '0'
     // 渲染到body上
-    if (dom) {
-      dom.appendChild(stats.domElement)
+    if (state.dom) {
+      state.dom.appendChild(state.stats.domElement)
     } else {
-      document.body.appendChild(stats.domElement)
+      document.body.appendChild(state.stats.domElement)
     }
   }
 
   // 创建灯光 环境光
   const createLight = () => {
     const light = new THREE.AmbientLight(0x404040, 50); // 柔和的白光
-    scene.add(light);
+    state.scene.add(light);
   }
 
   // 渲染3dcss的文字 记得在renderLoop中调用  不然不显示
   const create3dRenderer = () => {
-    css3dRenderer = new CSS3DRenderer()
-    css3dRenderer.setSize(width, height)
-    css3dRenderer.domElement.style.position = 'absolute'
-    css3dRenderer.domElement.style.left = '0'
-    css3dRenderer.domElement.style.top = '0'
-    css3dRenderer.domElement.style.pointerEvents = 'none'
-    // document.body.appendChild(css3dRenderer.domElement)
-    if (dom) {
-      dom.appendChild(css3dRenderer.domElement)
+    state.css3dRenderer = new CSS3DRenderer()
+    state.css3dRenderer.setSize(state.width, state.height)
+    state.css3dRenderer.domElement.style.position = 'absolute'
+    state.css3dRenderer.domElement.style.left = '0'
+    state.css3dRenderer.domElement.style.top = '0'
+    state.css3dRenderer.domElement.style.pointerEvents = 'none'
+    // document.body.appendChild(state.css3dRenderer.domElement)
+    if (state.dom) {
+      state.dom.appendChild(state.css3dRenderer.domElement)
     } else {
-      document.body.appendChild(css3dRenderer.domElement)
+      document.body.appendChild(state.css3dRenderer.domElement)
     }
   }
 
   // 渲染2dcss的文字  记得在renderLoop中调用  不然不显示
   const create2dRenderer = () => {
-    css2dRenderer = new CSS2DRenderer()
-    css2dRenderer.setSize(width, height)
-    css2dRenderer.domElement.style.position = 'fixed'
-    css2dRenderer.domElement.style.left = '0'
-    css2dRenderer.domElement.style.top = '0'
-    css2dRenderer.domElement.style.pointerEvents = 'none'
-    // document.body.appendChild(css2dRenderer.domElement)
-    if (dom) {
-      dom.appendChild(css2dRenderer.domElement)
+    state.css2dRenderer = new CSS2DRenderer()
+    state.css2dRenderer.setSize(state.width, state.height)
+    state.css2dRenderer.domElement.style.position = 'fixed'
+    state.css2dRenderer.domElement.style.left = '0'
+    state.css2dRenderer.domElement.style.top = '0'
+    state.css2dRenderer.domElement.style.pointerEvents = 'none'
+    // document.body.appendChild(state.css2dRenderer.domElement)
+    if (state.dom) {
+      state.dom.appendChild(state.css2dRenderer.domElement)
     } else {
-      document.body.appendChild(css2dRenderer.domElement)
+      document.body.appendChild(state.css2dRenderer.domElement)
     }
   }
 
   // 监听浏览器宽高
   const resizeRender = () => {
+    const handleResize = () => {
+      state.width = state.dom?.clientWidth || window.innerWidth
+      state.height = state.dom?.clientHeight || window.innerHeight
+      if (state.camera) {
+        // 摄像机
+        state.camera.aspect = state.width / state.height
+        state.camera.updateProjectionMatrix()
+      }
+      // 批量处理所有渲染器的大小调整
+      const renderers = [
+        state.renderer, //渲染器
+        state.css3dRenderer, //3d渲染器
+        state.css2dRenderer //2d渲染器
+      ]
+
+      renderers.forEach(renderer => {
+        if (renderer?.setSize) {
+          renderer.setSize(state.width, state.height)
+        }
+      })
+    }
+
+    // 使用防抖优化resize事件
+    let resizeTimeout
     window.addEventListener('resize', () => {
-      renderer.setSize(width, height) //场景的宽高
-      camera.aspect = width / height //摄像机的宽高
-      css3dRenderer.setSize(width, height) //3d渲染的宽高
-      css2dRenderer.setSize(width, height) //2d渲染的宽高
-      camera.updateProjectionMatrix()
+      if (resizeTimeout) clearTimeout(resizeTimeout)
+      resizeTimeout = setTimeout(handleResize, 100)
     })
   }
 
 
   // 循环渲染
-  const renderLoop = () => {
+  const renderLoop = (t) => {
+    if (!state.renderer || !state.scene || !state.camera) return
     requestAnimationFrame(renderLoop)
-    // 这里不再调用轨道控制器 update 方法，会影响摄像机 lookAt
-    // controls?.update() //更新轨道控制器
-    stats?.update() //更新监视器
-
-    // 也要让 DOM 渲染器不断更新不同角度的最新画面
-    css3dRenderer.render(scene, camera)
-    css2dRenderer.render(scene, camera)
-    renderer.render(scene, camera)
+    // 开始做动效->遍历所有要做动效的实例物体内置的 onTick 方法
+    EffectManager.getInstance().tickForEach(t)
+    // 性能优化：只在需要时更新
+    if (state.stats?.update) state.stats.update() //更新性能监视器
+    if (state.css3dRenderer?.render) state.css3dRenderer.render(state.scene, state.camera) //更新3d渲染器
+    if (state.css2dRenderer?.render) state.css2dRenderer.render(state.scene, state.camera) //更新2d渲染器
+    state.renderer.render(state.scene, state.camera) //更新渲染器
   }
 
   onMounted(() => {
@@ -223,10 +257,10 @@ export const useThreeInit = (domId) => {
     create2dRenderer()
     // 创建模型
     createModel()
-    // 创建3d点击事件
-    createClick3D()
     // 创建环境光
     createLight()
+    // 创建3d点击事件
+    createClick3D()
 
     // 创建坐标轴
     createHelper()
@@ -244,7 +278,7 @@ export const useThreeInit = (domId) => {
     // })
 
     // 双击进入驾驶位
-    window.addEventListener('dblclick', e => {
+    window.addEventListener('dblclick', () => {
       // 外观
       // camera.position.set(3, 1.5, 3)
       // controls.target = new THREE.Vector3(0, 0, 0)
@@ -258,8 +292,34 @@ export const useThreeInit = (domId) => {
     })
 
   })
+  // 清理函数
+  onUnmounted(() => {
 
-  return { scene, camera, renderer, controls, css3dRenderer, css2dRenderer };
+    // 释放资源
+    // state.scene?.dispose()
+    // state.renderer?.dispose()
+    // state.controls?.dispose()
+
+    // 移除事件监听
+    // window.removeEventListener('resize', resizeRender)
+    // window.removeEventListener('dblclick', handleDblClick)
+  })
+
+  // 返回响应式的状态   threejs对象不能用响应式  所以返回去的数据没接收到
+  return {
+    // 返回需要的属性和方法
+    getScene: () => state.scene,
+    getCamera: () => state.camera,
+    getRenderer: () => state.renderer,
+    getControls: () => state.controls,
+    getStats: () => state.stats,
+    getCss3dRenderer: () => state.css3dRenderer,
+    getCss2dRenderer: () => state.css2dRenderer,
+    getDimensions: () => ({
+      width: state.width,
+      height: state.height
+    })
+  }
   // return scene
 
 }

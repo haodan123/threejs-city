@@ -3,7 +3,11 @@ import * as THREE from 'three'
 export class FireBall {
   constructor(scene, center) {
     this.scene = scene
-    this.center = center
+    this.center = center //建筑的中心
+
+    this.nowMesh = {}//班球体的对象
+    this.nowScale = 0//当前放大的比例(0)
+
     this.init()
   }
   init() {
@@ -28,5 +32,17 @@ export class FireBall {
     const sphere = new THREE.Mesh(geometry, material);
     sphere.position.set(this.center.x, 0, this.center.z)
     this.scene.add(sphere);
+    this.nowMesh = sphere
+  }
+
+  // 放大的动效
+  onTick() {
+    // 慢慢放大
+    if (this.nowScale < 1) {
+      this.nowScale += 0.0001
+      this.nowMesh.scale.set(this.nowScale, this.nowScale, this.nowScale)
+    } else {
+      this.nowScale = 0
+    }
   }
 }

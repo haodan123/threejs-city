@@ -46,60 +46,25 @@
 import yztextimg from '@/assets/global_sc/yztextimg.png'
 import topHeader_sc from '@/components/topHeader_sc/index.vue'
 import boxContainer_sc from '@/components/boxContainer_sc/index.vue'
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useThreeInit } from '@/composables/threesInit.js'
-import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js' //辅助工具
-import { loadManager } from '@/model/loadManager'
-import { City } from '@/model/City.js'
-import { Ship } from '@/model/Ship.js'
-import { ClickHandler } from '@/utils/ClickHandler.js'
-import emitter from '@/utils/mitt'
-import * as THREE from 'three'
 
 const cityRef = ref()
-let scene, camera, renderer, controls, css3dRenderer, css2dRenderer
-const init = useThreeInit('cityRef')
-// console.log(init)
 
+// const { getScene, getCamera, getRenderer, getControls, getStats, getCss3dRenderer, getCss2dRenderer, getDimensions } =
+//   useThreeInit('cityRef')
+// 上面的方法可以获取到hook中的参数  但是必须在onMounted中使用
+useThreeInit('cityRef')
 onMounted(() => {
-  // const init = useThreeInit(cityRef.value)
-  // scene = init.scene
-  // camera = init.camera
-  // renderer = init.renderer
-  // controls = init.controls
-  // css3dRenderer = init.css3dRenderer
-  // css2dRenderer = init.css2dRenderer
-  // renderer.shadowMap.enabled = true // 开启阴影渲染支持
-  // camera.position.set(-148, 55, -101) //摄像头位置 模型比较大 摄像机调远一点
-  // // 加载城市和游轮的模型
-  // loadManager(['fbx/city.fbx', 'gltf/ship.glb'], modelList => {
-  //   // console.log(modelList)
-  //   modelList.forEach(item => {
-  //     if (item.url === 'fbx/city.fbx') {
-  //       // 如果是城市的fbx模型
-  //       new City(item.model, scene, camera, controls)
-  //     } else if (item.url === 'gltf/ship.glb') {
-  //       // 游艇的glb模型
-  //       new Ship(item.model, scene, camera, controls)
-  //     }
-  //     // scene.add(item.model)
-  //   })
-  // })
-  // // three.js 光线投射统一管理类初始化  threejs的点击事件
-  // ClickHandler.getInstance().init(camera, cityRef.value)
-  // resizeRender()
+  // console.log(getScene())
+  // console.log(getCamera())
+  // console.log(getRenderer())
+  // console.log(getControls())
+  // console.log(getStats())
+  // console.log(getCss3dRenderer())
+  // console.log(getCss2dRenderer())
+  // console.log(getDimensions())
 })
-
-// 监听浏览器宽高
-const resizeRender = () => {
-  window.addEventListener('resize', () => {
-    renderer.setSize(cityRef.value.clientWidth, cityRef.value.clientHeight) //场景的宽高
-    camera.aspect = cityRef.value.clientWidth / cityRef.value.clientHeight //摄像机的宽高
-    // css3dRenderer.setSize(cityRef.value.clientWidth, cityRef.value.clientHeight) //3d渲染的宽高
-    css2dRenderer.setSize(cityRef.value.clientWidth, cityRef.value.clientHeight) //2d渲染的宽高
-    camera.updateProjectionMatrix()
-  })
-}
 </script>
 
 <style lang="scss">
