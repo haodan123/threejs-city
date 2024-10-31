@@ -30,8 +30,6 @@ export class Fly extends BaseModel {
       result.push(item)
     }
     this.pointsArr = result
-
-
   }
 
   // 动效-不断切换最新的最标点
@@ -39,8 +37,6 @@ export class Fly extends BaseModel {
     if (this.pointIndex < this.pointsArr.length - 1) {
       // 重要：如果其他东西也要跟着我的坐标来动
       if (this.isCameraMove) {
-
-
         // 更改摄像机位置
         this.camera.position.copy(this.pointsArr[this.pointIndex])
         // 让摄像机中心观察点往上偏移一 点
@@ -48,6 +44,9 @@ export class Fly extends BaseModel {
       }
       // 把模型放到轨道上飞行
       this.model.position.copy(this.pointsArr[this.pointIndex]);
+      // 让鸟头朝向下一个点的方向
+      // this.model.lookAt(this.pointsArr[this.pointIndex + 1]);
+      // this.model.lookAt(this.pointsArr[this.pointIndex + 1]);
       this.pointIndex += 1; //调节速度
     } else {
       this.pointIndex = 0

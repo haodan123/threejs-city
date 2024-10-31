@@ -19,6 +19,7 @@ import emitter from '@/utils/mitt';
 import { DataManager } from '@/utils/DataManager';
 
 
+
 /**
  *初始化threejs
  * @param {*} dom 渲染到哪个dom下
@@ -39,6 +40,9 @@ export const useThreeInit = (domId) => {
     css2dRenderer: null,//2d渲染器
     width: 0,//宽度
     height: 0,//高度
+    modelList: [],//模型列表
+    clock: new THREE.Clock() // 添加时钟对象 用来做鸟的动画速度
+
   }
 
   // 初始化场景摄像机渲染器
@@ -99,7 +103,8 @@ export const useThreeInit = (domId) => {
     ])
 
     // 加载城市和游轮的模型
-    loadManager(['fbx/city.fbx', 'gltf/ship.glb'], modelList => {
+    loadManager(['fbx/city.fbx', 'gltf/fly/scene.gltf', 'gltf/ship.glb'], modelList => {
+      state.modelList = modelList
       // console.log(modelList)
       modelList.forEach(async (item) => {
         if (item.url === 'fbx/city.fbx') {
@@ -107,6 +112,24 @@ export const useThreeInit = (domId) => {
           const city = new City(item.model, state.scene, state.camera, state.controls)
           const data = await DataManager.getInstance().getData()
           city.dataObj = data // 传入默认数据
+        } else if (item.url === 'gltf/fly/scene.gltf') {
+          // 飞行器的gltf模型
+          const fly = new Fly(item.model, state.scene, state.camera, state.controls)
+
+          // 如果模型有动画，播放第一个动画
+          if (item.actions && item.actions.length > 0) {
+            item.actions[0].play();
+            item.actions[0].timeScale = 0.01; // 设置为原速度的一半
+          }
+          // 添加到动效管理类
+          EffectManager.getInstance().addObj(fly)
+          // eventBus 事件监听
+          emitter.on('mode-topView', (isOpen) => {
+            // console.log(isOpen)
+            fly.controls.enabled = !isOpen // 鸟瞰时轨道控制器禁止交互
+
+            fly.isCameraMove = isOpen //控制摄像机是否跟着飞行器移动
+          })
         } else if (item.url === 'gltf/ship.glb') {
           // 游艇的glb模型
 
@@ -130,21 +153,22 @@ export const useThreeInit = (domId) => {
       })
     })
     // // 把立方体当成飞行器
-    const geometry = new THREE.BoxGeometry(5, 5, 5);
-    const material = new THREE.MeshBasicMaterial({ color: new THREE.Color('lightblue') });
-    const cube = new THREE.Mesh(geometry, material);
-    state.scene.add(cube);
-    // 生成飞行器对象
-    const fly = new Fly(cube, state.scene, state.camera, state.controls)
-    // 添加到动效管理类
-    EffectManager.getInstance().addObj(fly)
-    // eventBus 事件监听
-    emitter.on('mode-topView', (isOpen) => {
-      // console.log(isOpen)
-      fly.controls.enabled = !isOpen // 鸟瞰时轨道控制器禁止交互
+    // 在上面吧立方体更换成了鸟的模型
+    // const geometry = new THREE.BoxGeometry(5, 5, 5);
+    // const material = new THREE.MeshBasicMaterial({ color: new THREE.Color('lightblue') });
+    // const cube = new THREE.Mesh(geometry, material);
+    // state.scene.add(cube);
+    // // 生成飞行器对象
+    // const fly = new Fly(cube, state.scene, state.camera, state.controls)
+    // // 添加到动效管理类
+    // EffectManager.getInstance().addObj(fly)
+    // // eventBus 事件监听
+    // emitter.on('mode-topView', (isOpen) => {
+    //   // console.log(isOpen)
+    //   fly.controls.enabled = !isOpen // 鸟瞰时轨道控制器禁止交互
 
-      fly.isCameraMove = isOpen //控制摄像机是否跟着飞行器移动
-    })
+    //   fly.isCameraMove = isOpen //控制摄像机是否跟着飞行器移动
+    // })
   }
   // 创建3d点击事件
   const createClick3D = () => {
@@ -245,6 +269,18 @@ export const useThreeInit = (domId) => {
       resizeTimeout = setTimeout(handleResize, 100)
     })
   }
+  //主要播放鸟模型的自带动画
+  const animate = (deltaTime) => {
+    state.modelList.forEach(item => {
+      if (item.mixer) {
+        // 动画加载太快了 手动延迟200ms
+        setTimeout(() => {
+          item.mixer.update(deltaTime);
+        }, 200)
+      }
+    });
+  }
+
 
 
   // 循环渲染
@@ -253,6 +289,9 @@ export const useThreeInit = (domId) => {
     requestAnimationFrame(renderLoop)
     // 开始做动效->遍历所有要做动效的实例物体内置的 onTick 方法
     EffectManager.getInstance().tickForEach(t)
+    // 鸟模型自带的的动画
+    const deltaTime = (t / t) * 0.1
+    animate(deltaTime)
     // 性能优化：只在需要时更新
     if (state.stats?.update) state.stats.update() //更新性能监视器
     if (state.css3dRenderer?.render) state.css3dRenderer.render(state.scene, state.camera) //更新3d渲染器

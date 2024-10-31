@@ -63,13 +63,22 @@ export const loadManager = (pathList, successFn) => {
   }
 
   pathList.forEach(path => {
+    // console.log(path);
+
     if (path.indexOf('fbx') > -1) {
       //如果是fbx文件
       fbxLoader.load(path, (obj) => {
+        // 处理FBX动画
+        const animations = obj.animations;
+        const mixer = animations.length > 0 ? new THREE.AnimationMixer(obj) : null;
+
         // 数据结构 存到数组里
         model.push({
           model: obj,
-          url: path
+          url: path,
+          animations, // 保存动画数据
+          mixer,     // 保存动画混合器
+          actions: animations.map(clip => mixer?.clipAction(clip)) // 预创建动作
         })
         // 如果加载的模型数量和存贮的数量一致就返回 在上面用loadingManager的onProgress方法 已经返回了
         // model.length === pathList.length && successFn(model)
@@ -77,9 +86,16 @@ export const loadManager = (pathList, successFn) => {
     } else if (path.indexOf('gltf') > -1) {
       // 如果是gltf文件
       gltfLoader.load(path, gltf => {
+        // 处理GLTF动画
+        const animations = gltf.animations;
+        const mixer = animations.length > 0 ? new THREE.AnimationMixer(gltf.scene) : null;
+
         model.push({
           model: gltf.scene,
-          url: path
+          url: path,
+          animations, // 保存动画数据
+          mixer,     // 保存动画混合器
+          actions: animations.map(clip => mixer?.clipAction(clip)) // 预创建动作
         });
         // 如果加载的模型数量和存贮的数量一致就返回 在上面用loadingManager的onProgress方法 已经返回了
         // model.length === pathList.length && successFn(model)
