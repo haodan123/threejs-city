@@ -7,8 +7,9 @@ export class ClickHandler {
     }
     return this.instance
   }
-  init(camera, dom) {
+  init(camera, dom, scene) {
     this.camera = camera
+    this.scene = scene
     this.dom = dom//渲染的dom
     this.list = [] // 光线投射交互计算的物体
     this.map = new Map() // key 可以是 three.js 物体（与点击要执行的回调函数产生一对一关系）
@@ -26,6 +27,14 @@ export class ClickHandler {
 
       rayCaster.setFromCamera(pointer, this.camera)
       const resultList = rayCaster.intersectObjects(this.list, false)
+
+      // const sceneList = rayCaster.intersectObjects(this.scene.children, false)
+      // if (sceneList.length > 0) {
+      //   // 点击获取三维坐标  可以用来获取游艇游行的路径
+      //   const intersect = sceneList[0];
+      //   // 打印各种坐标
+      //   console.log('点击位置(世界坐标):', intersect.point);
+      // }
 
       // 默认只触发第一个收集到的物体（后面物体不触发交互）
       if (resultList.length > 0) {

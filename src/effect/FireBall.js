@@ -45,4 +45,10 @@ export class FireBall {
       this.nowScale = 0
     }
   }
+  // 清除球体
+  clear() {
+    this.nowMesh.geometry.dispose()//立方体 释放内存
+    this.nowMesh.material.dispose()//材质 释放内存
+    this.scene.remove(this.nowMesh) 
+  }
 }

@@ -21,6 +21,10 @@ export class EffectManager {
     this.list.forEach(item => {
       item.onTick(t)
     })
-
+  }
+  // 移除指定物体，不参与动效
+  removeObj(obj) {
+    const index = this.list.findIndex(target => target === obj)
+    this.list.splice(index, 1)
   }
 }

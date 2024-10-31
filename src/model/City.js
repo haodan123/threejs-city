@@ -18,7 +18,19 @@ export class City extends BaseModel {
   init() {
     //scene 和model都在baseModel类中设置了 直接调用就行
     this.scene.add(this.model)
-
+    // 测试建筑信息
+    this.dataObj = {
+      "squareMeters": "200",
+      // "name": this.buildNameObj[key],
+      "officesRemain": "200",
+      "accommodate": "500",
+      "parkingRemain": "88",
+      "cameraPosition": {
+        "x": "-27.60404773326758",
+        "y": "77.6723594934777",
+        "z": "190.86129619259177"
+      }
+    }
     this.buildNameObj = { // 模型名字和建筑显示名字对应关系
       '01-shanghaizhongxindasha': '上海中心大厦',
       "02-huanqiujinrongzhongxin": "环球金融中心",
@@ -95,13 +107,20 @@ export class City extends BaseModel {
   initFire(buildName) {
     const build = this.model.getObjectByName(buildName)
     const { center, size } = getBoxCenter(build)
-    new Fire(this.scene, center, size) //火灾标记
+    const fire = new Fire(this.scene, center, size) //火灾标记
 
     const fireBall = new FireBall(this.scene, center) //火灾范围影像
     // 添加到动效管理类
     EffectManager.getInstance().addObj(fireBall)
 
+    // 过了 15 秒以后清除标记
+    setTimeout(() => {
+      fire.clear()
+      fireBall.clear()
 
+      // 移除动效
+      EffectManager.getInstance().removeObj(fireBall)
+    }, 15000)
 
   }
 
@@ -112,20 +131,10 @@ export class City extends BaseModel {
       ClickHandler.getInstance().addMesh(build, (object) => {
         // console.log(object);
         const { center } = getBoxCenter(object) //获取建筑的中心
-        // 测试建筑信息
-        let dataObj = {
-          "squareMeters": "200",
-          "name": this.buildNameObj[key],
-          "officesRemain": "200",
-          "accommodate": "500",
-          "parkingRemain": "88",
-          "cameraPosition": {
-            "x": "-27.60404773326758",
-            "y": "77.6723594934777",
-            "z": "190.86129619259177"
-          }
-        }
-        new BuildInfo(this.scene, center, dataObj)
+
+        // new BuildInfo(this.scene, center, this.dataObj)//写死的默认数据
+        new BuildInfo(this.scene, center, this.dataObj.buildingsIntroduce[object.name])//接口数据
+
       })
     })
   }

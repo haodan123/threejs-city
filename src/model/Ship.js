@@ -1,4 +1,5 @@
 import { BaseModel } from '@/model/BaseModel'
+import emitter from '@/utils/mitt'
 import * as THREE from 'three'
 
 
@@ -8,9 +9,12 @@ export class Ship extends BaseModel {
     //scene 和model都在baseModel类中设置了 直接调用就行
     this.scene.add(this.model)
     this.pointIndex = 0//保存当前游船所在位置的坐标索引
+    this.isCameraMove = false // 控制摄像机是否跟随切换位置的开关
 
     // 生成游船移动的路线
     this.generatorMovePath()
+    this.onModelAttach() // 鼠标事件
+
   }
   // 生成游船进行的路线坐标点集合
   generatorMovePath() {
@@ -52,9 +56,24 @@ export class Ship extends BaseModel {
       this.pointIndex = 0;
       return;
     }
+
+
     // 获取当前位置和下一个位置
     const currentPoint = this.pointArr[this.pointIndex];
     const nextPoint = this.pointArr[this.pointIndex + 1];
+
+    // 游船模式
+    if (this.isCameraMove) {
+      const { x, y, z } = nextPoint
+      // 更改摄像机位置
+      // this.camera.position.copy(])
+      // 让摄像机中心观察点往上偏移一 点
+      if (!this.isMouseTouching) { // 鼠标没有被按下时，才设置摄像机的 lookAt
+        // 如果处于漫游模式+鼠标被按下，证明自己要旋转摄像机，那就不能让摄像的 lookAt 执行影响旋转效果
+        this.camera.lookAt(x, y + 20, z)
+      }
+      this.camera.position.set(x, y + 20, z)
+    }
     // 更新游船位置
     this.model.position.copy(currentPoint);
     // 让船头朝向下一个点的方向
@@ -63,5 +82,44 @@ export class Ship extends BaseModel {
     // this.pointIndex += 1
     this.pointIndex++
 
+  }
+  // 鼠标按下
+  mousedownFn = () => {
+    this.isMouseTouching = true
+
+  }
+  // 鼠标移动
+  mousemoveFn = (e) => {
+    if (this.isMouseTouching) { //按下鼠标时进入此逻辑
+      // 旋转核心思想：在原有的旋转角度基础上，新增移动的偏移量，乘以 0.01 让旋转弧度降低
+      // rotateY() 在上一次旋转的角度上继续新增你传入的弧度数值
+      // rotation.y = 直接赋予一个旋转的最终弧度数值
+      this.camera.rotateY((this.prePos - e.clientX) * 0.01)
+    }
+    this.prePos = e.clientX
+
+  }
+  // 鼠标抬起
+  mouseupFn = () => {
+    this.isMouseTouching = false
+    this.prePos = undefined//清空上一次坐标的数据
+  }
+
+  // 绑定/移除鼠标事件
+  onModelAttach() {
+    // 点击漫游模式 - 绑定/移除鼠标相关事件
+
+    emitter.on('mode-roaming', isOpen => {
+      if (isOpen) {
+        // 这三个函数用箭头函数的方式赋值  不然this对不上
+        window.addEventListener('mousedown', this.mousedownFn) //鼠标按下
+        window.addEventListener('mousemove', this.mousemoveFn)//鼠标移动
+        window.addEventListener('mouseup', this.mouseupFn)//鼠标抬起
+      } else {
+        window.removeEventListener('mousedown', this.mousedownFn) //移除鼠标按下  
+        window.removeEventListener('mousemove', this.mousemoveFn)//移除鼠标移动
+        window.removeEventListener('mouseup', this.mouseupFn)//移除鼠标抬起
+      }
+    })
   }
 }

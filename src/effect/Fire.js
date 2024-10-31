@@ -21,4 +21,8 @@ export class Fire {
     this.scene.add(sprite);
 
   }
+  clear() {
+
+    this.scene.remove(this.sprite)
+  }
 }

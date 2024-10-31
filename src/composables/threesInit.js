@@ -10,9 +10,15 @@ import { loadManager } from '@/model/loadManager'
 import { City } from '@/model/City.js' //城市类
 import { Ship } from '@/model/Ship.js'//游艇类
 import { Sky } from '@/environment/Sky';//天空类
+import { Fly } from '@/model/Fly';//飞行器类
+
 import { ClickHandler } from '@/utils/ClickHandler.js'
 //动效管理类
 import { EffectManager } from '@/utils/EffectManager';
+import emitter from '@/utils/mitt';
+import { DataManager } from '@/utils/DataManager';
+
+
 /**
  *初始化threejs
  * @param {*} dom 渲染到哪个dom下
@@ -95,12 +101,16 @@ export const useThreeInit = (domId) => {
     // 加载城市和游轮的模型
     loadManager(['fbx/city.fbx', 'gltf/ship.glb'], modelList => {
       // console.log(modelList)
-      modelList.forEach(item => {
+      modelList.forEach(async (item) => {
         if (item.url === 'fbx/city.fbx') {
           // 如果是城市的fbx模型
-          new City(item.model, state.scene, state.camera, state.controls)
+          const city = new City(item.model, state.scene, state.camera, state.controls)
+          const data = await DataManager.getInstance().getData()
+          city.dataObj = data // 传入默认数据
         } else if (item.url === 'gltf/ship.glb') {
           // 游艇的glb模型
+
+
           const ship = new Ship(item.model, state.scene, state.camera, state.controls)
           // console.log(ship);
           ship.model.position.set(150, 0, -80)//放到合适的位置
@@ -111,15 +121,36 @@ export const useThreeInit = (domId) => {
           // 把游艇添加到动效管理类里面 做动效
           EffectManager.getInstance().addObj(ship)
 
+          emitter.on('mode-roaming', (isOpen) => {
+            ship.controls.enabled = !isOpen // 漫游时轨道控制器禁止交互
+            ship.isCameraMove = isOpen //控制摄像机是否跟着飞行器移动
+          })
+
         }
       })
+    })
+    // // 把立方体当成飞行器
+    const geometry = new THREE.BoxGeometry(5, 5, 5);
+    const material = new THREE.MeshBasicMaterial({ color: new THREE.Color('lightblue') });
+    const cube = new THREE.Mesh(geometry, material);
+    state.scene.add(cube);
+    // 生成飞行器对象
+    const fly = new Fly(cube, state.scene, state.camera, state.controls)
+    // 添加到动效管理类
+    EffectManager.getInstance().addObj(fly)
+    // eventBus 事件监听
+    emitter.on('mode-topView', (isOpen) => {
+      // console.log(isOpen)
+      fly.controls.enabled = !isOpen // 鸟瞰时轨道控制器禁止交互
+
+      fly.isCameraMove = isOpen //控制摄像机是否跟着飞行器移动
     })
   }
   // 创建3d点击事件
   const createClick3D = () => {
     // // three.js 光线投射统一管理类初始化  threejs的点击事件
     // ClickHandler.getInstance().init(camera, cityRef.value)
-    ClickHandler.getInstance().init(state.camera, state.dom)
+    ClickHandler.getInstance().init(state.camera, state.dom, state.scene)
   }
 
   // 坐标轴
